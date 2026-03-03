@@ -1,0 +1,15 @@
+# SPA fallback: serve index.html for routes like /courses, /tlc-courses, etc.
+# Required so refresh or direct URL work; without this, Apache returns 404.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  # Serve existing files/dirs (e.g. /assets/*, favicon, index.html)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [QSA,L]
+</IfModule>
+
+# If deploying under a subpath (e.g. https://domain.com/classrooms/):
+# 1. Build with: VITE_BASE_PATH=/classrooms/
+# 2. Put the dist contents in the server's /classrooms/ directory
+# 3. Use: RewriteBase /classrooms/

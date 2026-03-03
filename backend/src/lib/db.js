@@ -9,7 +9,8 @@ export async function connectDb() {
   const uri = getEnv('MONGODB_URI');
   if (!uri) throw new Error('MONGODB_URI is required');
   const dbName = getEnv('MONGODB_DB_NAME', DEFAULT_DB_NAME);
-  client = new MongoClient(uri);
+  // Avoid TLS "tlsv1 alert internal error" on Windows (IPv6/IPv4 auto-selection)
+  client = new MongoClient(uri, { serverSelectionTimeoutMS: 15000, autoSelectFamily: false });
   await client.connect();
   await client.db('admin').command({ ping: 1 });
   db = client.db(dbName);

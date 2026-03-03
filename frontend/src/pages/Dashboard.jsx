@@ -62,12 +62,35 @@ function Dashboard() {
     fetchAll();
   }, []);
 
+  const pollSyncStatus = async (jobId) => {
+    const maxAttempts = 60; // up to ~2 minutes
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const res = await api.get('/sync/status', { params: { jobId } });
+      const status = res.data.status;
+      if (status === 'success' || status === 'completed') {
+        return res.data;
+      }
+      if (status === 'failed') {
+        throw new Error(res.data.error || 'Sync failed.');
+      }
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    throw new Error('Sync is taking longer than expected. Please try again later.');
+  };
+
   const handleSync = async () => {
     setSyncing(true);
     setSyncSuccess(false);
     setError(null);
     try {
-      await api.post('/sync/all');
+      const { data } = await api.post('/sync/all');
+      const jobId = data.jobId;
+      if (!jobId) {
+        throw new Error('Failed to start sync.');
+      }
+      await pollSyncStatus(jobId);
       await fetchAll();
       setSyncSuccess(true);
       setTimeout(() => setSyncSuccess(false), 5000);
