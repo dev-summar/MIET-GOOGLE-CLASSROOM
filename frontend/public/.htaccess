@@ -1,12 +1,33 @@
-# SPA fallback: serve index.html for routes like /courses, /tlc-courses, etc.
-# Required so refresh or direct URL work; without this, Apache returns 404.
+# =============================================================================
+# SPA (Single Page Application) routing for React/Vite with client-side routing
+# =============================================================================
+#
+# Why this is needed:
+# - React Router (and similar) handle routes entirely in the browser. Routes like
+#   /teachers, /dashboard, /students exist only in the client; the server has
+#   no physical file or folder for them.
+# - When a user refreshes the page or opens a deep link directly, the browser
+#   asks Apache for that path. Without these rules, Apache looks for a real
+#   file/directory, finds nothing, and returns 404.
+# - By rewriting such requests to index.html, the SPA is always loaded. Then
+#   the JavaScript bundle runs, React Router reads the URL, and shows the
+#   correct view. Static assets (JS, CSS, images) are still served as real
+#   files because we only rewrite when the request is NOT a file or directory.
+#
+# =============================================================================
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  # Serve existing files/dirs (e.g. /assets/*, favicon, index.html)
+
+  # If request is not a real file
   RewriteCond %{REQUEST_FILENAME} !-f
+
+  # If request is not a real directory
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^ index.html [QSA,L]
+
+  # Redirect all requests to index.html
+  RewriteRule ^ index.html [L]
 </IfModule>
 
 # If deploying under a subpath (e.g. https://domain.com/classrooms/):
